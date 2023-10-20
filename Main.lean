@@ -93,11 +93,11 @@ def parse_transition_table : (n : Nat) → (m : Nat) → String → Option (Vect
 
 
 variable {n m : Nat} {δ : Fin n → Fin m → Option (Fin n) × Fin m × Direction}
-  {P : TuringMachine (Fin n) (Fin m) δ → Prop}
-  {ind_step : ∀ tm : TuringMachine (Fin n) (Fin m) δ, P tm → P (TuringMachine.advance tm)}
-  {hP : ∀ tm : TuringMachine (Fin n) (Fin m) δ, P tm → (TuringMachine.is_not_halted tm)}
+  {P : TuringMachine δ → Prop}
+  {ind_step : ∀ tm : TuringMachine δ, P tm → P (TuringMachine.advance tm)}
+  {hP : ∀ tm : TuringMachine δ, P tm → (TuringMachine.is_not_halted tm)}
 
-lemma iter_ind (k : Nat) (tm : TuringMachine (Fin n) (Fin m) δ) (h : P tm) : P (TuringMachine.advance^[k] tm) := by
+lemma iter_ind (k : Nat) (tm : TuringMachine δ) (h : P tm) : P (TuringMachine.advance^[k] tm) := by
   cases k with
   | zero => assumption
   | succ k' =>
@@ -105,7 +105,7 @@ lemma iter_ind (k : Nat) (tm : TuringMachine (Fin n) (Fin m) δ) (h : P tm) : P 
     apply ind_step
     assumption
 
-theorem non_halting_by_induction (tm : TuringMachine (Fin n) (Fin m) δ) (h : P tm) : TuringMachine.does_not_halt tm := by
+theorem non_halting_by_induction (tm : TuringMachine δ) (h : P tm) : TuringMachine.does_not_halt tm := by
   intro k
   apply hP
   apply iter_ind k tm h
