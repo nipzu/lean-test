@@ -261,11 +261,10 @@ theorem M_to_M_iter_ : M nl nlm nrm nr =>> M nl (nlm + nrm) 0 nr := by
   cases nrm
   . exists 0
   case succ nrm' =>
-    have t1 : M nl (nlm + 1) nrm' nr =>> M nl (nlm + 1 + nrm') 0 nr := M_to_M_iter_ -- nl (nlm + 1) nrm' nr
-    have t2 : M nl nlm (nrm' + 1) nr =>> M nl (nlm + 1) nrm' nr := by exists 1
-    have t3 := trans_succeeds t2 t1
-    conv at t3 => arg 2; arg 2; rw [Nat.add_assoc]; arg 2; rw [Nat.add_comm]
-    exact t3
+    have t1 : M nl nlm (nrm' + 1) nr =>> M nl (nlm + 1) nrm' nr := by exists 1
+    have t2 : M nl (nlm + 1) nrm' nr =>> M nl (nlm + 1 + nrm') 0 nr := M_to_M_iter_ -- nl (nlm + 1) nrm' nr
+    conv at t2 => arg 2; arg 2; rw [Nat.add_assoc]; arg 2; rw [Nat.add_comm]
+    exact trans_succeeds t1 t2
 
 -- theorem M_to_M' (nl nlm nr : Nat) : TuringMachine.advance^[3] (M nl (nlm + 1) 0 nr) = M' nl nlm 0 (nr + 1) := rfl
 
@@ -290,13 +289,12 @@ theorem M'_to_M'_iter_ : M' nl nlm nrm nr =>> M' nl 0 (nrm + nlm) nr := by
   cases nlm
   . exists 0
   case succ nlm' =>
-    have t1 : M' nl nlm' (nrm + 1) nr =>> M' nl 0 (nrm + 1 + nlm') nr := M'_to_M'_iter_
-    have t2 : M' nl (nlm' + 1) nrm nr =>> M' nl nlm' (nrm + 1) nr := by exists 1
-    have t3 := trans_succeeds t2 t1
-    conv at t3 => 
+    have t1 : M' nl (nlm' + 1) nrm nr =>> M' nl nlm' (nrm + 1) nr := by exists 1
+    have t2 : M' nl nlm' (nrm + 1) nr =>> M' nl 0 (nrm + 1 + nlm') nr := M'_to_M'_iter_
+    conv at t2 => 
       arg 2; arg 3; rw [Nat.add_assoc];
       arg 2; rw [Nat.add_comm]
-    exact t3
+    exact trans_succeeds t1 t2
 
 -- theorem M'_to_M (nl nm nr : Nat) : TuringMachine.advance^[4] (M' (nl + 2) 0 nm nr) = M (nl + 1) 0 (nm + 2) nr := by rfl
 
@@ -513,9 +511,7 @@ theorem A'_to_A'_ : A' nl (nr + 1) =>> A' (nl + 1) nr := by
       Stream'.const Symbol.SYM_0) := rfl
     -- unfold A'
     rw [t1, t2]
-    have t3 : (nr + 1) + nl = nr + (nl + 1) := by
-      rw [Nat.add_assoc]
-      conv => arg 2; arg 2; rw [Nat.add_comm]
+    have t3 : (nr + 1) + nl = nr + (nl + 1) := by linarith
     rw [t3]
   ext : 1
   . ext : 1
@@ -544,10 +540,10 @@ theorem A'_to_A'_iter_ : A' nl nr =>> A' (nl + nr) 0 := by
   . exists 0
   case succ nr' =>
     have t1 : A' nl (nr' + 1) =>> A' (nl + 1) nr' := A'_to_A'_
-    have t4 : A' (nl + 1) nr' =>> A' (nl + 1 + nr') 0 := A'_to_A'_iter_
-    conv at t4 => rw [Nat.add_assoc]; arg 2; arg 1; arg 2; rw [Nat.add_comm]
-    rw [←Nat.add_assoc] at t4
-    exact trans_succeeds t1 t4
+    have t2 : A' (nl + 1) nr' =>> A' (nl + 1 + nr') 0 := A'_to_A'_iter_
+    conv at t2 => rw [Nat.add_assoc]; arg 2; arg 1; arg 2; rw [Nat.add_comm]
+    rw [←Nat.add_assoc] at t2
+    exact trans_succeeds t1 t2
 
 -- theorem A_to_A'_iter (n : Nat) : TuringMachine.advance^[2*(n + 1)] (A (n + 1)) = A' (n + 1) 0 := by
 --   have t1 := A_to_A' n
