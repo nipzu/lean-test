@@ -8,7 +8,7 @@ package lean_test {
   -- add package configuration options here
 }
 
-lean_lib TuringMachine2 {
+lean_lib TuringMachine {
   -- add library configuration options here
 }
 
