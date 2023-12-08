@@ -63,9 +63,9 @@ def parse_transition (n : Nat) (m : Nat) (chars : Vector Char 3) : Option $ Opti
   if let ('-', '-', '-') := (sym, dir, state) then
     some none
   else if let (some sym', some state', some dir') := (parse_symbol n sym, parse_state m sym, parse_direction dir) then
-    some $ 
-      if let some state'' := state' then 
-        some (sym', state'', dir') 
+    some $
+      if let some state'' := state' then
+        some (sym', state'', dir')
       else
         none
   else
@@ -110,6 +110,41 @@ theorem non_halting_by_induction (tm : TuringMachine δ) (h : P tm) : TuringMach
   apply iter_ind k tm h
   assumption
 
+lemma min_prop_help (f : Nat -> Bool) (n : Nat) :
+  (∃m : Nat, (m < n) ∧ (f m = true)) ∨ (∀m : Nat, (m < n) -> (f m = false)) := by
+  cases n with
+  | zero =>
+    apply Or.inr
+    intro m h
+    exact False.elim (Nat.not_lt_zero m h)
+  | succ n' =>
+    cases (min_prop_help f n') with
+    | inl h =>
+      let ⟨m, ⟨hm, hmf⟩⟩ := h
+      have hm' : m < Nat.succ n' := Nat.lt_succ_of_lt hm
+      exact Or.inl ⟨m, ⟨hm', hmf⟩⟩
+    | inr h =>
+      cases fn' : (f n') with
+      | true =>
+        apply Or.inl
+        exists n'
+        rw [Nat.lt_succ, fn']
+        exact ⟨Nat.le_refl n', rfl⟩
+      | false =>
+        apply Or.inr
+        intro m hm
+        have t1 := Nat.le_of_lt_succ hm
+        cases Nat.eq_or_lt_of_le t1 with
+        | inl hl =>
+          rw [hl, fn']
+        | inr hr =>
+          exact h m hr
 
-structure Point where
-
+theorem min_prop (f : Nat -> Bool) (n : Nat) (h : f n = true) :
+  ∃m : Nat, (f m = true) ∧ (∀k : Nat, (k < m) -> (f k = false)) := by
+  cases min_prop_help f n with
+  | inl hl =>
+    let ⟨m, ⟨_, hm⟩⟩ := hl
+    exact min_prop f m hm
+  | inr hr =>
+    exists n

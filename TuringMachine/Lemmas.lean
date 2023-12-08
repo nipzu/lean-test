@@ -65,7 +65,7 @@ theorem append_sum : (n + k) ** l ++ₛ s = (n ** l ++ₛ (k ** l ++ₛ s)) := b
     simp [Nat.add_comm]
     rw [←Nat.add_assoc]
     conv =>
-      pattern list_repeat (n' + 1) l 
+      pattern list_repeat (n' + 1) l
       unfold list_repeat
     conv => lhs; unfold list_repeat
     simp
@@ -82,7 +82,7 @@ theorem append_get' (h : k < n) : (n ** [a] ++ₛ s) k = a := by
     unfold list_repeat
     cases k with
     | zero => rfl
-    | succ k' => 
+    | succ k' =>
       rw [Stream'.append_append_stream]
       unfold Stream'.appendStream'
       unfold Stream'.cons
@@ -94,12 +94,21 @@ theorem append_get' (h : k < n) : (n ** [a] ++ₛ s) k = a := by
 theorem get_drop (n m : Nat) (s : Stream' α) : (Stream'.drop m s) n = s (n + m) :=
   rfl
 
+theorem append_assoc {l1 l2 : List Γ} {s : Stream' Γ} : l1 ++ l2 ++ₛ s = l1 ++ₛ (l2 ++ₛ s) := by
+  cases l1 with
+  | nil =>
+    conv => rhs; unfold Stream'.appendStream'
+  | cons hd l1' =>
+    unfold Stream'.appendStream'
+    simp
+    rw [append_assoc]
+
 theorem append_get (k n : Nat) (l : List T) (s : Stream' T) : (k ** l ++ₛ s) (l.length * k + n) = s n := by
   cases k with
   | zero =>
     simp
     rfl
-  | succ k' => 
+  | succ k' =>
     rw [←Nat.add_one, append_sum, Nat.left_distrib, Nat.add_assoc]
     rw [append_get k' (l.length * 1 + n) l (1 ** l ++ₛ s)]
     unfold list_repeat
@@ -117,8 +126,9 @@ theorem list_repeat_one_cons (n : Nat) (s : Γ) :
   list_repeat (n + 1) [s] = s :: list_repeat n [s]
     := rfl
 
-theorem append_repeated_zero (l : List Γ) :
-  0 ** l ++ₛ s = s := rfl
+@[simp]
+theorem zero_repeated (l : List Γ) :
+  0 ** l = [] := rfl
 
 theorem append_repeated_one (n : Nat) (s : Γ) :
   append_to_repeated (n + 1) [s] = append_to_repeated 1 [s] ∘ append_to_repeated n [s]
@@ -159,7 +169,7 @@ theorem halted_to_halted (tm : TuringMachine δ) (k : Nat) (h : ¬(TuringMachine
       let (TuringMachine.mk tape' state') := tm'
       cases state'
       . intro hnh
-        exact (Bool.self_ne_not false) hnh  
+        exact (Bool.self_ne_not false) hnh
       . contradiction
     . contradiction
 
@@ -195,7 +205,7 @@ lemma reaches_f_n_with_ge_n_steps
   by
     induction n with
     | zero => exists 0
-    | succ n' ih => 
+    | succ n' ih =>
       let ⟨k', ⟨hk', hk''⟩⟩ := ih
       let ⟨m, hm⟩ := hs n'
       exists m + k'
@@ -226,7 +236,7 @@ lemma reaches_some
   Decidable.casesOn (Nat.decLe n l)
     (fun t => by
       rw [Nat.not_le] at t
-      have := Nat.succ_le_of_lt t 
+      have := Nat.succ_le_of_lt t
       let ⟨n', hn'⟩ := Nat.exists_eq_add_of_le this
       rw [hn']
       exists (n' + 1)
@@ -259,7 +269,7 @@ lemma halted_state_none
     )
     (fun h' => by
       unfold TuringMachine.is_not_halted at h
-      exact False.elim (h h') 
+      exact False.elim (h h')
     )
 
 lemma next_of_halted_halted
@@ -286,7 +296,7 @@ lemma next_of_halted_eq
   : (TuringMachine.advance^[n] tm) = tm := by
     cases n
     . rfl
-    case succ n' => 
+    case succ n' =>
       rw [←Nat.one_add, Function.iterate_add_apply]
       simp [next_of_halted_eq tm h n']
       have t1 := halted_state_none tm h
@@ -312,7 +322,7 @@ theorem tm_not_halt'
   (starting_machine : TuringMachine δ)
   (hs : ∀n, f n =>> f (n + 1))
   (hnn : ∀n, f n ≠ f (n + 1))
-  (hl : starting_machine =>> f 0) 
+  (hl : starting_machine =>> f 0)
   : TuringMachine.does_not_halt starting_machine := by
   intro n
   have ⟨m,⟨k, h⟩⟩ := reaches_some f hs hnn starting_machine hl n

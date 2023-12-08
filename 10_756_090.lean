@@ -16,8 +16,8 @@ def transition : State5 -> Symbol2 -> Option State5 × Symbol2 × Direction
 
 abbrev TM_10756090 := TuringMachine transition
 
--- In state A and tape filled with zeroes 
-def starting_machine : TM_10756090 := 
+-- In state A and tape filled with zeroes
+def starting_machine : TM_10756090 :=
   TuringMachine.mk (Tape.blank Symbol2.V0) (State5.A)
 
 namespace proof
@@ -25,11 +25,11 @@ namespace proof
 -- state: C
 -- tape: C0 + n * [11] + [0] + n * [1]
 def A (n : Nat) : TuringMachine transition :=
-  let right_tape : Stream' Symbol2 := 
-    (2*n) ** [Symbol2.V1] ++ₛ (
-             [Symbol2.V0] ++ₛ (
-      n   ** [Symbol2.V1] ++ₛ
-    Stream'.const Symbol2.V0))
+  let right_tape : Stream' Symbol2 :=
+    (2*n) ** [Symbol2.V1] ++
+              Symbol2.V0  ::
+       n  ** [Symbol2.V1] ++ₛ
+    Stream'.const Symbol2.V0
   let tape : Tape Symbol2 := Tape.mk (Stream'.const Symbol2.V0) Symbol2.V0 right_tape
   TuringMachine.mk tape State5.C
 
@@ -38,39 +38,39 @@ def A (n : Nat) : TuringMachine transition :=
 def A' (nl : Nat) (nr : Nat) : TM_10756090 :=
   let left_tape : Stream' Symbol2 :=
     nl ** [Symbol2.V1, Symbol2.V0] ++ₛ Stream'.const Symbol2.V0
-  let right_tape : Stream' Symbol2 := 
-    (2 * nr)  ** [Symbol2.V1] ++ₛ (
-                 [Symbol2.V0] ++ₛ (
+  let right_tape : Stream' Symbol2 :=
+    (2 * nr)  ** [Symbol2.V1] ++
+                  Symbol2.V0  ::
     (nr + nl) ** [Symbol2.V1] ++ₛ
-    Stream'.const Symbol2.V0))
+    Stream'.const Symbol2.V0
   TuringMachine.mk (Tape.mk left_tape Symbol2.V1 right_tape) State5.E
 
 -- state: B
 -- tape: nl * [01] + nlm * [1] + D1 + nrm * [1] + [0] + nr * [1]
 def M (nl nlm nrm nr : Nat) : TM_10756090 :=
   let left_tape : Stream' Symbol2 :=
-    nlm ** [Symbol2.V1]             ++ₛ (
+    nlm ** [Symbol2.V1]             ++
     nl  ** [Symbol2.V1, Symbol2.V0] ++ₛ
-    Stream'.const Symbol2.V0)
-  let right_tape : Stream' Symbol2 := 
-    nrm ** [Symbol2.V1] ++ₛ (
-           [Symbol2.V0] ++ₛ (
+    Stream'.const Symbol2.V0
+  let right_tape : Stream' Symbol2 :=
+    nrm ** [Symbol2.V1] ++
+            Symbol2.V0  ::
     nr  ** [Symbol2.V1] ++ₛ
-    Stream'.const Symbol2.V0))
+    Stream'.const Symbol2.V0
   TuringMachine.mk (Tape.mk left_tape Symbol2.V1 right_tape) State5.B
 
 -- state: D
 -- tape: nl * [01] + nlm * [1] + D1 + nrm * [1] + [0] + nr * [1]
 def M' (nl nlm nrm nr : Nat) : TM_10756090 :=
-  let left_tape : Stream' Symbol2 := 
-    nlm ** [Symbol2.V1]             ++ₛ (
+  let left_tape : Stream' Symbol2 :=
+    nlm ** [Symbol2.V1]             ++
     nl  ** [Symbol2.V1, Symbol2.V0] ++ₛ
-    Stream'.const Symbol2.V0)
-  let right_tape : Stream' Symbol2 := 
-    nrm ** [Symbol2.V1] ++ₛ (
-           [Symbol2.V0] ++ₛ (
+    Stream'.const Symbol2.V0
+  let right_tape : Stream' Symbol2 :=
+    nrm ** [Symbol2.V1] ++
+            Symbol2.V0  ::
     nr  ** [Symbol2.V1] ++ₛ
-    Stream'.const Symbol2.V0))
+    Stream'.const Symbol2.V0
   TuringMachine.mk (Tape.mk left_tape Symbol2.V1 right_tape) State5.D
 
 lemma A'_to_M : A' (n + 1) 0 =>> M (n + 2) 0 n 0 := by
@@ -79,12 +79,13 @@ lemma A'_to_M : A' (n + 1) 0 =>> M (n + 2) 0 n 0 := by
   ext : 1
   . ext : 1
     repeat rfl
-    . have t1 : (TuringMachine.advance^[2] (A' (n + 1) 0)).tape.right_half = 
+    . have t1 : (TuringMachine.advance^[2] (A' (n + 1) 0)).tape.right_half =
         (n ** [Symbol2.V1] ++ₛ Stream'.const Symbol2.V0) := by
           conv => arg 2; rw [←Nat.zero_add n]
       unfold M; conv => rhs; simp
-      rw [append_repeated_zero, t1]
-      rw [cons_to_const]
+      rw [t1, append_assoc]
+      have t2 : [Symbol2.V0] ++ₛ Stream'.const Symbol2.V0 = [Symbol2.V0] ++ₛ Stream'.const Symbol2.V0 := rfl
+      rw [t2, cons_to_const]
   . rfl
 
 lemma M_to_M_iter : M nl nlm nrm nr =>> M nl (nlm + nrm) 0 nr := by
@@ -142,11 +143,10 @@ lemma A'_to_A' : A' nl (nr + 1) =>> A' (nl + 1) nr := by
   ext : 1
   . ext : 1
     repeat rfl
-    . conv => rhs; unfold A'
-      simp
-      have t1 : nr + (nl + 1) = (nr + 1) + nl := by linarith
-      rw [t1]
-      rfl
+    . have t1 : nr + (nl + 1) = (nr + 1) + nl := by linarith
+      conv =>
+        rhs; unfold A'; simp
+        rw [t1]
   . rfl
 
 lemma A'_to_A'_iter : A' nl nr =>> A' (nl + nr) 0 := by
@@ -178,15 +178,15 @@ lemma A_ne_A_next (n : Nat) : A (n + 2) ≠ A (n + 3) := by
   simp at t1
   have t3 := append_get (2 * (n + 2)) 0 [Symbol2.V1]
   simp at t3
-  rw [t3] at t1
+  rw [append_assoc, t3] at t1
   have t2 : 2 * (n + 2) < 2 * (n + 3) := by simp
-  rw [append_get' t2] at t1
+  rw [append_assoc, append_get' t2] at t1
   have t7 : Symbol2.V0 ≠ Symbol2.V1 := by decide
   exact t7 t1
 
 theorem tm_not_halt : TuringMachine.does_not_halt starting_machine :=
-  tm_not_halt' 
-    (fun n => A (n + 2)) 
+  tm_not_halt'
+    (fun n => A (n + 2))
     starting_machine
     @A_to_A
     @A_ne_A_next
